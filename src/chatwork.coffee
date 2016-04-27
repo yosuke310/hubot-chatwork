@@ -6,6 +6,8 @@ Adapter       = (require 'hubot').Adapter
 TextMessage   = (require 'hubot').TextMessage
 
 class Chatwork extends Adapter
+  _me = null
+
   # override
   send: (envelope, strings...) ->
     for string in strings
@@ -26,6 +28,9 @@ class Chatwork extends Adapter
 
     bot = new ChatworkStreaming(options, @robot)
 
+    bot.Me (err, res) ->
+      _me = res
+
     for roomId in bot.rooms
       bot.Room(roomId).Messages().listen()
 
@@ -34,6 +39,7 @@ class Chatwork extends Adapter
         name: account.name
         avatarImageUrl: account.avatar_image_url
         room: roomId
+      body = body.replace(///^\[to:#{_me.account_id}\].*///i, @robot.name + " ") if _me?
       @receive new TextMessage user, body, id
 
     @bot = bot
@@ -242,4 +248,3 @@ class ChatworkStreaming extends EventEmitter
 
     request.on "error", (err) ->
       logger.error "Chatwork request error: #{err}"
-
